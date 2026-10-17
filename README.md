@@ -11,6 +11,7 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 | `Q_Router.ipynb` | The full pipeline. Open it in Google Colab and choose **Runtime → Run all** |
 | `q_router.py` | The same code as a plain Python script (`# %%` cell markers), easier to read and diff |
 | `requirements.txt` | Python packages |
+| `results/` | Saved simulator results (CSVs, charts, full run log) from the 60-problem run |
 | `USE-CASE.md` | The problem, who it affects, and why it matters |
 | `LIMITATIONS.md` | What this project does not prove |
 | `docs/PITCH_PLAN.md` | Pitch strategy, quantum theory notes, error mitigation plan |
@@ -41,4 +42,11 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 
 ## Status
 
-Simulator results confirmed on Oct 17, 2026, for the pharma test problem (10 candidates). All methods found the optimal funded set, with mean-shot approximation ratios of classical SA 0.953, QAOA 0.786, and digital anneal 0.748. Hardware results are pending.
+**Simulator results (Oct 17, 2026, 60 generated problems, full run log in `results/`):**
+
+- **Flagship problem (fund 4 of 10 drug candidates):** every method found the optimal set. Mean-shot scores: classical SA 0.956, QAOA 0.786, digital anneal 0.753 (1 = optimal, 0 = random guess).
+- **Router:** predicts each solver's score with a mean error of 0.02–0.03, well below the real spread between problems. When choosing between the two quantum modes, it picks the better one 88% of the time and comes within 0.003 of a perfect oracle. Classical wins every problem at this size, and the router says so.
+- **Cross-industry transfer (section 5d):** QAOA settings borrowed from a structural twin in *another* industry score 0.607 with one circuit run. A random donor from another industry scores 0.580, the generic default 0.581, and fully re-optimizing (~60 runs) 0.637. So the twin match recovers about half of the optimizer's gain at 1/60 of the cost, and a random donor recovers none. Transfer does not help healthcare problems.
+- **Simultaneous solving (section 11, noisy simulator of IBM Torino):** three problems from three fields packed on 18 qubits score within 0.03 of running each alone.
+
+Real-hardware results are pending.

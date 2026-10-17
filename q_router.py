@@ -316,7 +316,7 @@ def random_instance(g):
     return fam, Q
 
 rows = []; QS = []; GATE_PARAMS = []; g = np.random.default_rng(42)   # QS / GATE_PARAMS: each problem + its tuned QAOA angles
-N_INSTANCES = 12          # quick run; raise to 40–100 for the final presentation
+N_INSTANCES = 60          # ~2 min on a laptop; 12 gives noisy, unreliable router statistics
 for it in range(N_INSTANCES):
     fam, Q = random_instance(g)
     _, E_all = solve_exact(Q)
@@ -337,7 +337,11 @@ df = pd.DataFrame(rows)
 FEATURES = ["n", "density", "max_degree", "mean_degree", "dyn_range", "log_fidelity", "log_fidelity_anneal", "two_qubit_gates", "depth"]
 TARGETS = ["score_gate", "score_anneal", "score_classical"]
 router_model = RandomForestRegressor(n_estimators=300, random_state=0)
-print("Router CV R²:", cross_val_score(router_model, df[FEATURES], df[TARGETS], cv=5, scoring="r2").mean().round(3))
+from sklearn.model_selection import cross_val_predict as _cvp
+_p = _cvp(router_model, df[FEATURES], df[TARGETS], cv=5)
+print(pd.DataFrame({"mean abs error": np.abs(_p - df[TARGETS].values).mean(0),
+                    "spread of true score (std)": df[TARGETS].std().values}, index=TARGETS).round(3).to_string())
+print("(The router is useful where its error is well below the spread. Classical barely varies, so R² is meaningless for it.)")
 router_model.fit(df[FEATURES], df[TARGETS])
 print(pd.Series(router_model.feature_importances_, FEATURES).sort_values(ascending=False).round(3))
 
@@ -365,9 +369,9 @@ for f in df["field"].unique():
     if len(te) < 2: continue
     m = RandomForestRegressor(n_estimators=300, random_state=0).fit(tr[FEATURES], tr[TARGETS])
     pred = m.predict(te[FEATURES])
-    agree = np.mean([best_solver(p) == best_solver(t) for p, t in zip(pred, te[TARGETS].values)])
+    agree = np.mean([np.argmax(p[:2]) == np.argmax(t[:2]) for p, t in zip(pred, te[TARGETS].values)])   # quantum modes only
     transfer.append(dict(held_out_field=f, trained_on=", ".join(sorted(set(tr["field"]))), n_test=len(te),
-                         mean_abs_error=np.abs(pred - te[TARGETS].values).mean(), same_solver_choice=agree))
+                         mean_abs_error=np.abs(pred - te[TARGETS].values).mean(), same_quantum_mode_choice=agree))
 print(pd.DataFrame(transfer).round(3).to_string(index=False))
 
 nn = NearestNeighbors(n_neighbors=4).fit(Z)
@@ -415,6 +419,7 @@ bench.to_csv("router_benchmark.csv")
 # For every problem we find its **closest structural twin from a different field** (by fingerprint), copy that twin's tuned angles, and run the circuit **once, with no optimizer at all**. Three scores:
 # - **own optimized**: angles tuned on this very problem (~60 runs)
 # - **transferred, zero-shot**: angles borrowed from a twin in another industry (1 run)
+# - **random donor**: angles borrowed from a *random* problem in another field (1 run). This is the control: if the twin beats a random donor, the fingerprint match matters; if they tie, normalized QAOA angles are simply near-universal (known as *parameter concentration*, Brandão et al. 2018; Shaydulin et al. 2023)
 # - **no learning**: a generic default schedule (1 run)
 #
 # If "transferred" lands close to "own optimized" and well above "no learning", **quantum know-how learned in one industry solves another industry's problems for free.** Transfer works because every Hamiltonian is normalized to the same scale (section 3).
@@ -434,6 +439,7 @@ def cross_field_twin(z, own_field=None):
     _, order = nn_all.kneighbors(z.reshape(1, -1))
     return int(next(j for j in order[0] if own_field is None or df.loc[j, "field"] != own_field))
 
+donor_rng = np.random.default_rng(0)
 transfer_rows = []
 for i in range(len(df)):
     j = cross_field_twin(ZF[i], df.loc[i, "field"])
@@ -441,13 +447,18 @@ for i in range(len(df)):
     transfer_rows.append(dict(field=df.loc[i, "field"], twin_field=df.loc[j, "field"],
                               own_optimized=df.loc[i, "r_gate_ideal"],
                               transferred_zero_shot=approx_ratio(run_fixed(QS[i], GATE_PARAMS[j]), E_all),
+                              random_donor=np.mean([approx_ratio(run_fixed(QS[i], GATE_PARAMS[r]), E_all) for r in
+                                  donor_rng.choice(np.flatnonzero((df["field"] != df.loc[i, "field"]).values), 3)]),
                               no_learning=approx_ratio(run_fixed(QS[i], annealing_init(1)), E_all)))
 transfer_df = pd.DataFrame(transfer_rows)
-cols = ["own_optimized", "transferred_zero_shot", "no_learning"]
+cols = ["own_optimized", "transferred_zero_shot", "random_donor", "no_learning"]
 print(transfer_df.groupby("field")[cols].mean().round(3).to_string())
 print("\nAll problems:", transfer_df[cols].mean().round(3).to_dict())
 kept = transfer_df["transferred_zero_shot"].mean() / transfer_df["own_optimized"].mean()
 print(f"Zero-shot transfer keeps {kept:.0%} of the fully optimized quality with ~60× fewer circuit runs.")
+gap = (transfer_df["transferred_zero_shot"] - transfer_df["random_donor"])
+print(f"Twin vs. random donor: {gap.mean():+.3f} (twin better on {(gap > 0).mean():.0%} of problems). "
+      + ("The fingerprint match adds value." if gap.mean() > 0.02 else "No clear gain: the angles transfer because they are near-universal, not because of the match."))
 transfer_df.to_csv("zero_shot_transfer.csv", index=False)
 
 transfer_df.groupby("field")[cols].mean().plot.bar(rot=0, figsize=(9, 4))
@@ -545,7 +556,6 @@ for f in out["field"].unique():
     plt.plot(d.index, d.values, "o-", label=f)
 plt.xscale("log"); plt.xlabel("hardware error reduction vs. today (×)"); plt.ylabel("fraction routed to a quantum mode")
 plt.title("Which industries cross over to quantum first"); plt.legend(); plt.grid(alpha=.3); plt.show()
-
 
 # %% [markdown]
 # ## 9. Real IBM hardware: both modes, with and without error mitigation (+5 hardware bonus tier)
@@ -687,7 +697,8 @@ def solve_simultaneous(problems, backend, shots=4096, force_quantum=True, mitiga
         if "offset" in item:
             solo = QuantumCircuit(item["n"]); solo.compose(dict(bodies)[item["offset"]], inplace=True); solo.measure_all()
             pubs.append(pm.run(solo))
-    res = s.run(pubs).result()
+    if isinstance(backend, AerSimulator): res = [s.run([pub]).result()[0] for pub in pubs]   # see note above
+    else: res = s.run(pubs).result()                                                    # one hardware job
     together = res[0].data.meas.get_counts(); k = 1
     for item in plan:
         if "offset" in item:
@@ -718,6 +729,9 @@ multi_table.to_csv("simultaneous_results.csv", index=False)
 # (Colab only) !pip -q install gradio
 import gradio as gr
 
+BUILDER_FIELD = {"Finance: healthcare-stock portfolio": "finance",
+                 "Healthcare: diagnostic test selection": "healthcare",
+                 "Finance × Healthcare: drug pipeline": "finance×healthcare"}
 BUILDERS = {
     "Finance: healthcare-stock portfolio": lambda n: portfolio_problem(n, max(2, n // 3)),
     "Healthcare: diagnostic test selection": lambda n: feature_selection_problem(n, sparsify=0.5)[:2],
@@ -738,7 +752,7 @@ def run_demo(selected, n):
         Q, labels = BUILDERS[name](n)
         mode, preds, feats = route(Q)
         x_best, E_all = solve_exact(Q)
-        j = cross_field_twin(SCALER.transform(pd.DataFrame([feats])[FEATURES])[0], None)
+        j = cross_field_twin(SCALER.transform(pd.DataFrame([feats])[FEATURES])[0], BUILDER_FIELD[name])
         scores = {"classical": approx_ratio(solve_annealer(Q, num_reads=100)[1].mean(), E_all),
                   "gate-QAOA": approx_ratio(run_fixed(Q, GATE_PARAMS[j]), E_all),               # zero-shot borrowed angles
                   "digital-anneal": approx_ratio(solve_digital_anneal(Q, ANNEAL_P, ANNEAL_DELTA, shots=1024)["mean_energy"], E_all)}
@@ -772,3 +786,4 @@ with gr.Blocks(title="Q-Router") as app:
     go.click(run_demo, [pick, size], [out_table, out_plot])
 
 app.launch(share=True)
+
