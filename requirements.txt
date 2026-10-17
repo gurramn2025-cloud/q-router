@@ -1,0 +1,12 @@
+qiskit>=1.3
+qiskit-ibm-runtime
+qiskit-aer
+dwave-samplers
+dimod
+scikit-learn
+yfinance
+matplotlib
+pandas
+numpy
+scipy
+gradio
