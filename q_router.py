@@ -205,7 +205,23 @@ def solve_qaoa(Q, reps=2, shots=2048, maxiter=120, backend=LOCAL, alpha=1.0):
     res = minimize(lambda th: cvar(run(th), Q, alpha), annealing_init(reps), method="COBYLA", options={"maxiter": maxiter})
     counts = run(res.x)
     best = min(counts, key=lambda b: energy(Q, bits_to_x(b)))
-    return dict(x=bits_to_x(best), counts=counts, params=res.x, mean_energy=mean_energy(counts, Q))
+    return dict(x=bits_to_x(best), counts=counts, params=res.x, mean_energy=mean_energy(counts, Q), evals=int(res.nfev))
+def is_local(backend):
+    """True for simulators and fake devices, which run on Aer on this computer."""
+    return isinstance(backend, AerSimulator) or "fake" in str(getattr(backend, "name", "")).lower()
+
+def mitigated_sampler(backend, shots=4096, mitigate=True):
+    s = Sampler(mode=backend); s.options.default_shots = shots
+    if mitigate and not is_local(backend):
+        s.options.dynamical_decoupling.enable = True; s.options.dynamical_decoupling.sequence_type = "XY4"
+        s.options.twirling.enable_gates = True; s.options.twirling.enable_measure = True
+    return s
+
+def run_pubs(sampler, pubs, backend):
+    """One batched job on hardware. Locally, one job per circuit: qiskit-aer 0.17 corrupts the results
+    of a narrower circuit batched after a wider one (seen in section 11's crosstalk numbers)."""
+    if is_local(backend): return [sampler.run([pub]).result()[0] for pub in pubs]
+    return sampler.run(pubs).result()
 
 # %% [markdown]
 # ### Annealing mode on IBM hardware: digitized quantum annealing (linear-ramp QAOA)
@@ -514,6 +530,109 @@ x_opt16, E16 = solve_exact(Q16)
 print("Decomposed solution ratio: %.4f   (feasible: %s)" % (approx_ratio(energy(Q16, x_dec), E16), x_dec.sum() == 5))
 
 # %% [markdown]
+# ## 6b. Break it down: which quantum type wins which piece?
+# One realistic problem with two very different parts:
+# - **Which drugs to fund** (8 candidates, fund 3): every decision affects every other one (shared budget, correlated risk), so it is **dense**.
+# - **How to split clinical-trial sites between two research partners** (10 sites): each site only interacts with a few neighbors, so it is **sparse**.
+#
+# Small links tie them together (a funded drug's trials run at particular sites). We **break the problem into pieces** with spectral clustering, then run **both** quantum types on **every** piece: gate-based QAOA (short, tuned) and the digital anneal (a slow sweep, more layers). Each is scored three ways: perfect simulator, predicted from the chip's calibration (F × ideal), and a full noisy simulation of IBM Torino. Section 9b runs the same circuits on the real chip in one job.
+#
+# First, the pattern across all 60 problems from section 5: **where does each type win?**
+
+# %%
+when = df.groupby("field").agg(density=("density", "mean"), gate=("score_gate", "mean"), anneal=("score_anneal", "mean"),
+                               anneal_wins=("score_anneal", lambda s: (s > df.loc[s.index, "score_gate"]).mean()))
+print(when.sort_values("density", ascending=False).round(3).to_string())
+plt.figure(figsize=(8, 4.5))
+for f in df["field"].unique():
+    m = df["field"] == f; plt.scatter(df.loc[m, "density"], df.loc[m, "score_anneal"] - df.loc[m, "score_gate"], label=f, alpha=.75)
+plt.axhline(0, c="gray", lw=.8); plt.xlabel("problem density (how connected the decisions are)")
+plt.ylabel("anneal score − gate score\n(above 0 = anneal wins)"); plt.title("Dense problems favor gate-based QAOA;\nsparse ones let the anneal catch up", fontsize=11)
+plt.legend(loc="lower left", fontsize=9); plt.tight_layout(); plt.show()
+
+# %%
+def pharma_trials_problem(n_drugs=8, k=3, n_sites=10, link=0.1, seed=4):
+    """Fund k of n_drugs (dense) + split n_sites trial sites between two partners (sparse), weakly linked."""
+    Qd, dnames = pharma_problem(n_drugs, k, seed=seed); Qs, _ = maxcut_problem(n_sites, degree=2, seed=seed)
+    Qd, Qs = Qd / np.abs(Qd).max(), Qs / np.abs(Qs).max()        # put both parts on the same scale
+    N = n_drugs + n_sites; Q = np.zeros((N, N)); Q[:n_drugs, :n_drugs] = Qd; Q[n_drugs:, n_drugs:] = Qs
+    g = np.random.default_rng(seed)
+    for i in range(n_drugs):                                      # drug i's trials run at one site: small reward if both chosen
+        Q[i, n_drugs + g.integers(n_sites)] -= link
+    return Q, dnames + [f"site{j}" for j in range(n_sites)], n_drugs
+
+def spectral_blocks(Q, block=8):
+    A = np.abs(Q + Q.T); np.fill_diagonal(A, 0); k = max(1, int(np.ceil(len(Q) / block)))
+    labels = SpectralClustering(k, affinity="precomputed", random_state=0).fit_predict(A + 1e-9) if k > 1 else np.zeros(len(Q), int)
+    return [c[i:i + block] for c in (np.flatnonzero(labels == l) for l in range(k)) for i in range(0, len(c), block)]
+
+NOISY = AerSimulator.from_backend(DEVICE)
+Qbig, names_big, n_drugs = pharma_trials_problem()
+x_best_big, E_big = solve_exact(Qbig)
+blocks = spectral_blocks(Qbig)
+x0 = np.zeros(len(Qbig))                                          # no classical warm start: pieces are judged on their own
+
+BREAKDOWN, rows_b = [], []
+for b, B in enumerate(blocks):
+    Qb = sub_qubo(Qbig, B, x0); _, Eb = solve_exact(Qb); feats = profile(Qb)
+    part = "drug funding" if np.mean(B < n_drugs) > .5 else "trial-site network"
+    qg = solve_qaoa(Qb, reps=1, maxiter=80)                       # gate: tuned on the simulator
+    p_a, d_a = tune_anneal(Qb); qa = solve_digital_anneal(Qb, p_a, d_a)   # anneal: schedule tuned on the simulator
+    Fg, twoq_g, _ = expected_fidelity(Qb, 1); Fa, twoq_a, _ = expected_fidelity(Qb, p_a)
+    ideal_g, ideal_a = approx_ratio(qg["mean_energy"], Eb), approx_ratio(qa["mean_energy"], Eb)
+    noisy_g = approx_ratio(run_fixed(Qb, qg["params"], reps=1, shots=4096, backend=NOISY), Eb)
+    noisy_a = approx_ratio(run_fixed(Qb, qa["params"], reps=p_a, shots=4096, backend=NOISY), Eb)
+    pg, pa, _ = router_model.predict(pd.DataFrame([feats])[FEATURES])[0]
+    pick = "gate" if pg >= pa else "anneal"; better = "gate" if noisy_g >= noisy_a else "anneal"
+    BREAKDOWN.append(dict(piece=b, part=part, Q=Qb, E=Eb, gate=(1, qg["params"]), anneal=(p_a, qa["params"]),
+                          noisy_gate=noisy_g, noisy_anneal=noisy_a))
+    rows_b.append({"piece": b, "part": part, "qubits": len(B), "density": round(feats["density"], 2),
+                   "2q gates gate / anneal": f"{twoq_g} / {twoq_a}",
+                   "ideal gate": ideal_g, "ideal anneal": ideal_a,
+                   "predicted gate": Fg * ideal_g, "predicted anneal": Fa * ideal_a,
+                   "noisy-sim gate": noisy_g, "noisy-sim anneal": noisy_a,
+                   "router picked": pick, "better on noisy chip": better, "right call": pick == better})
+breakdown_df = pd.DataFrame(rows_b)
+print(breakdown_df.round(3).to_string(index=False))
+breakdown_df.to_csv("breakdown_comparison.csv", index=False)
+
+# Strategy comparison on the noisy chip: average piece score
+G, A = breakdown_df["noisy-sim gate"].values, breakdown_df["noisy-sim anneal"].values
+pick_g = (breakdown_df["router picked"] == "gate").values
+strategies = {"all gate-QAOA": G.mean(), "all digital anneal": A.mean(),
+              "router's mix": np.where(pick_g, G, A).mean(), "best possible mix": np.maximum(G, A).mean()}
+print("\nAverage piece score on the noisy IBM Torino model (1 = optimal, 0 = random):")
+print(pd.Series(strategies).round(3).to_string())
+
+# Reassemble the full answer from the pieces (block coordinate descent, 2 sweeps), per strategy
+def assemble(choose):
+    x = x0.copy()
+    for _ in range(2):
+        for b, B in enumerate(blocks):
+            Qb = sub_qubo(Qbig, B, x); mode = choose(b)
+            xb = (solve_qaoa(Qb, reps=1, maxiter=80)["x"] if mode == "gate" else
+                  solve_digital_anneal(Qb, *tune_anneal(Qb))["x"] if mode == "anneal" else solve_annealer(Qb)[0])
+            if energy(Qb, xb) <= energy(Qb, x[B]): x[B] = xb
+    return x
+full = {}
+for name, choose in {"all gate-QAOA": lambda b: "gate", "all digital anneal": lambda b: "anneal",
+                     "router's mix": lambda b: rows_b[b]["router picked"], "classical": lambda b: "classical"}.items():
+    x = assemble(choose)
+    full[name] = dict(ratio=approx_ratio(energy(Qbig, x), E_big), found_optimum=bool(energy(Qbig, x) <= E_big.min() + 1e-9),
+                      drugs_funded_ok=bool(x[:n_drugs].sum() == 3))
+print("\nFull 18-variable answer rebuilt from the pieces (best shot per piece, ideal simulator):")
+print(pd.DataFrame(full).T.to_string())
+
+fig, ax = plt.subplots(figsize=(9, 4)); w = .38; idx = np.arange(len(breakdown_df))
+for k_, (mode, lab) in enumerate([("gate", "gate-QAOA"), ("anneal", "digital anneal")]):
+    rects = ax.bar(idx + (k_ - .5) * w, breakdown_df[f"noisy-sim {mode}"], w, label=lab)
+    for r, pk in zip(rects, breakdown_df["router picked"]):
+        if pk == mode: r.set_edgecolor("black"); r.set_linewidth(2.5)
+ax.set_xticks(idx); ax.set_xticklabels([f"piece {r.piece}\n{r.part}\n({r.qubits} qubits, density {r.density})" for r in breakdown_df.itertuples()])
+ax.set_ylabel("score on noisy IBM Torino model\n(1 = optimal, 0 = random)"); ax.axhline(0, c="gray", lw=.8)
+ax.set_title("Each piece solved both ways (black outline = router's choice)"); ax.legend(); fig.tight_layout(); plt.show()
+
+# %% [markdown]
 # ## 7. Error mitigation demo: zero-noise extrapolation on a noisy simulator of a real IBM device
 # We amplify the noise on purpose by **gate folding** (U → U U† U triples the noise but leaves the ideal result unchanged), measure at noise ×1, ×3, ×5, and extrapolate back to ×0. We also compare the depolarizing-model prediction from Section 5 against this full noisy simulation.
 
@@ -538,6 +657,37 @@ _, Em = solve_exact(Qm); F, _, _ = expected_fidelity(Qm, 1)
 print(f"ideal ⟨E⟩={ideal:.3f}  raw noisy={vals[0]:.3f}  ZNE={zne:.3f}  depolarizing-model prediction={F*ideal+(1-F)*Em.mean():.3f}")
 plt.plot(scales, vals, "o-", label="noisy (FakeDevice)"); plt.plot([0], [zne], "r*", ms=14, label="ZNE extrapolation")
 plt.axhline(ideal, ls="--", c="g", label="ideal"); plt.xlabel("noise scale factor"); plt.ylabel("mean QUBO energy"); plt.legend(); plt.title("Zero-noise extrapolation"); plt.show()
+
+# %% [markdown]
+# ## 7b. Is entanglement doing any work?
+# The two-qubit (ZZ) gates in QAOA are where qubits get **entangled**: one for every pair of decisions that affect each other (two drugs in the same disease area, two redundant tests). Two checks on the flagship 10-drug problem, on the perfect simulator:
+# 1. **How entangled is the solver's quantum state?** The entanglement entropy between the first 5 and the last 5 drug qubits (0 = not entangled, 5 bits = the maximum possible).
+# 2. **Switch entanglement off.** Remove every ZZ gate, keep everything else, re-tune, and compare the score. If it drops, entanglement is doing real work.
+#
+# This is the same trade-off the router manages: entanglement is the useful ingredient, but entangling gates are also the noisiest operations on the chip.
+
+# %%
+from qiskit.quantum_info import partial_trace, entropy
+
+def tune_ansatz(ansatz, Q, reps, shots=2048, maxiter=120, backend=LOCAL):
+    meas = ansatz.copy(); meas.measure_all()
+    isa = generate_preset_pass_manager(optimization_level=1, backend=backend).run(meas); s = Sampler(mode=backend)
+    run = lambda th: s.run([(isa, th)], shots=shots).result()[0].data.meas.get_counts()
+    res = minimize(lambda th: mean_energy(run(th), Q), annealing_init(reps), method="COBYLA", options={"maxiter": maxiter})
+    return res.x, mean_energy(run(res.x), Q)
+
+Qf, _ = pharma_problem(n=10, k=4, seed=1); _, Ef = solve_exact(Qf); REPS = 2
+H, _ = qubo_to_ising(Qf)
+H_off = SparsePauliOp.from_list([(p.to_label(), c) for p, c in zip(H.paulis, H.coeffs) if p.to_label().count("Z") == 1])  # drop ZZ terms
+results_ent = {}
+for label, Hx in [("with entanglement (normal QAOA)", H), ("entanglement switched off", H_off)]:
+    ans = QAOAAnsatz(Hx, reps=REPS); params, e = tune_ansatz(ans, Qf, REPS)
+    bound = ans.assign_parameters(params)
+    S_half = entropy(partial_trace(Statevector(bound.decompose(reps=3)), list(range(5))), base=2)
+    ops = generate_preset_pass_manager(optimization_level=1, backend=DEVICE, seed_transpiler=1).run(bound).count_ops()
+    results_ent[label] = {"score (1 = best, 0 = random)": approx_ratio(e, Ef), "entanglement entropy (bits, max 5)": S_half,
+                          "two-qubit gates on IBM Torino": ops.get("cz", 0) + ops.get("ecr", 0)}
+ent_df = pd.DataFrame(results_ent).T; print(ent_df.round(3).to_string()); ent_df.to_csv("entanglement_test.csv")
 
 # %% [markdown]
 # ## 8. The roadmap chart: as hardware improves, more problems from every field go to quantum hardware
@@ -600,6 +750,30 @@ if RUN_ON_HARDWARE:
     table.append({"mode": "classical simulated annealing", "ideal sim": approx_ratio(e_sa.mean(), Eh)})
     print(pd.DataFrame(table).round(3).to_string(index=False))
     json.dump(results, open("hardware_results.json", "w"))
+
+# %% [markdown]
+# ## 9b. The break-down on real hardware: gate vs. anneal, piece by piece (1 job)
+# The section 6b pieces, each solved **both** ways on the real chip with settings tuned on the simulator. Every circuit goes into **one** batched job with error mitigation (dynamical decoupling + twirling). Run section 9 first (it creates `backend`).
+
+# %%
+RUN_BREAKDOWN_ON_HARDWARE = False   # one job, roughly 30-60 s of QPU time
+if RUN_BREAKDOWN_ON_HARDWARE:
+    pm = generate_preset_pass_manager(optimization_level=3, backend=backend)
+    pubs, meta = [], []
+    for pc in BREAKDOWN:
+        for mode in ("gate", "anneal"):
+            p, params = pc[mode]
+            pubs.append((pm.run(build_qaoa(pc["Q"], p)), params)); meta.append((pc, mode))
+    s = mitigated_sampler(backend, shots=4096)
+    res = run_pubs(s, pubs, backend); print("Hardware job done on", backend.name)
+    hw = {(pc["piece"], mode): approx_ratio(mean_energy(r.data.meas.get_counts(), pc["Q"]), pc["E"]) for (pc, mode), r in zip(meta, res)}
+    breakdown_df["QPU gate"] = [hw[(b, "gate")] for b in breakdown_df["piece"]]
+    breakdown_df["QPU anneal"] = [hw[(b, "anneal")] for b in breakdown_df["piece"]]
+    breakdown_df["better on QPU"] = np.where(breakdown_df["QPU gate"] >= breakdown_df["QPU anneal"], "gate", "anneal")
+    breakdown_df["router right on QPU"] = breakdown_df["router picked"] == breakdown_df["better on QPU"]
+    print(breakdown_df[["piece", "part", "qubits", "density", "noisy-sim gate", "noisy-sim anneal", "QPU gate", "QPU anneal",
+                        "router picked", "better on QPU", "router right on QPU"]].round(3).to_string(index=False))
+    breakdown_df.to_csv("breakdown_comparison.csv", index=False)
 
 # %% [markdown]
 # ## 10. The noise cliff: where does each quantum mode stop helping on real hardware? (2 jobs total)
@@ -687,7 +861,7 @@ def solve_simultaneous(problems, backend, shots=4096, force_quantum=True, mitiga
     combined.measure_all()
     pm = generate_preset_pass_manager(optimization_level=3, backend=backend, seed_transpiler=1)
     s = Sampler(mode=backend); s.options.default_shots = shots
-    if mitigate and not isinstance(backend, AerSimulator):
+    if mitigate and not is_local(backend):
         s.options.dynamical_decoupling.enable = True; s.options.dynamical_decoupling.sequence_type = "XY4"
         s.options.twirling.enable_gates = True; s.options.twirling.enable_measure = True
 
@@ -697,8 +871,7 @@ def solve_simultaneous(problems, backend, shots=4096, force_quantum=True, mitiga
         if "offset" in item:
             solo = QuantumCircuit(item["n"]); solo.compose(dict(bodies)[item["offset"]], inplace=True); solo.measure_all()
             pubs.append(pm.run(solo))
-    if isinstance(backend, AerSimulator): res = [s.run([pub]).result()[0] for pub in pubs]   # see note above
-    else: res = s.run(pubs).result()                                                    # one hardware job
+    res = run_pubs(s, pubs, backend)   # one hardware job; one job per circuit on local simulators
     together = res[0].data.meas.get_counts(); k = 1
     for item in plan:
         if "offset" in item:
@@ -718,6 +891,78 @@ RUN_SIMULTANEOUS_ON_HARDWARE = False   # needs section 9's `backend`; one job, ~
 target_backend = backend if RUN_SIMULTANEOUS_ON_HARDWARE else AerSimulator.from_backend(DEVICE)
 multi_table = solve_simultaneous(MULTI, target_backend)
 multi_table.to_csv("simultaneous_results.csv", index=False)
+
+# %% [markdown]
+# ## 11b. One tune, one job: pattern recognition as a compute saver
+# The normal way to run four problems from four industries: tune each one separately (~80 circuit runs each), then run each in its own chip job. **Q-Router's way:**
+# 1. **Group** the problems into families with the same *shape* (their fingerprints), whatever industry they come from.
+# 2. **Tune once per family** on the simulator, and share those settings with every family member.
+# 3. **Pack every problem onto the chip in one circuit, one job.**
+#
+# Three versions of each problem separate the two savings: **own settings, alone** (the normal way), **shared settings, alone** (does sharing settings cost quality?), and **shared settings, packed together** (does packing cost quality?). The **compute ledger** then counts what each approach used.
+
+# %%
+from sklearn.cluster import KMeans
+from qiskit import QuantumCircuit
+ONE_TUNE = {"finance: stock portfolio": portfolio_problem(4, 2)[0],
+            "healthcare: diagnostic tests": feature_selection_problem(4, sparsify=0.5)[0],
+            "finance×healthcare: drug pipeline": pharma_problem(4, 2, seed=11)[0],
+            "networks: referral network split": maxcut_problem(4, degree=2, seed=11)[0]}
+
+def prepare_one_tune(problems, n_families=2):
+    names_ = list(problems); Qs_ = [problems[k] for k in names_]
+    Z_ = SCALER.transform(pd.DataFrame([profile(Q) for Q in Qs_])[FEATURES])
+    fam = KMeans(n_families, n_init=10, random_state=0).fit_predict(Z_)
+    own = [solve_qaoa(Q, reps=1, maxiter=80) for Q in Qs_]                       # normal way: tune every problem
+    shared = {}
+    for f in sorted(set(fam)):                                                   # Q-Router: tune once per family
+        members = np.flatnonzero(fam == f); centre = Z_[members].mean(0)
+        rep = members[np.argmin(((Z_[members] - centre) ** 2).sum(1))]          # the most typical member
+        shared[f] = own[rep]                                                     # its tuning run is the family's only one
+    return dict(names=names_, Qs=Qs_, E=[solve_exact(Q)[1] for Q in Qs_], family=fam, own=own, shared=shared)
+
+def run_one_tune(prep, backend, shots=4096):
+    names_, Qs_, fam = prep["names"], prep["Qs"], prep["family"]
+    circuits, bodies, offsets, offset = [], [], [], 0
+    for i, Q in enumerate(Qs_):
+        H, _ = qubo_to_ising(Q)
+        for params in (prep["own"][i]["params"], prep["shared"][fam[i]]["params"]):  # alone: own, then shared settings
+            c = QAOAAnsatz(H, reps=1).assign_parameters(params); c.measure_all(); circuits.append(c)
+        bodies.append((offset, QAOAAnsatz(H, reps=1).assign_parameters(prep["shared"][fam[i]]["params"])))
+        offsets.append(offset); offset += len(Q)
+    packed = QuantumCircuit(offset)
+    for off, body in bodies: packed.compose(body, qubits=range(off, off + body.num_qubits), inplace=True)
+    packed.measure_all(); circuits.append(packed)
+    pm = generate_preset_pass_manager(optimization_level=3, backend=backend, seed_transpiler=1)
+    res = run_pubs(mitigated_sampler(backend, shots), [pm.run(c) for c in circuits], backend)
+    together = res[-1].data.meas.get_counts(); rows = []
+    for i, (nm, Q) in enumerate(zip(names_, Qs_)):
+        rows.append({"problem": nm, "shape family": int(fam[i]),
+                     "own settings, alone": marginal_ratio(res[2 * i].data.meas.get_counts(), Q, 0, prep["E"][i]),
+                     "shared settings, alone": marginal_ratio(res[2 * i + 1].data.meas.get_counts(), Q, 0, prep["E"][i]),
+                     "shared settings, packed": marginal_ratio(together, Q, offsets[i], prep["E"][i])})
+    return pd.DataFrame(rows)
+
+def compute_ledger(prep, shots=4096):
+    n = len(prep["Qs"]); fams = len(prep["shared"])
+    runs_all = sum(o["evals"] for o in prep["own"]); runs_q = sum(s["evals"] for s in prep["shared"].values())
+    return pd.DataFrame({"normal way": {"problems tuned": n, "tuning circuit runs (simulator)": runs_all,
+                                         "circuits sent to the chip": n, "chip jobs": n, "QPU shots": n * shots},
+                         "Q-Router (one tune, one job)": {"problems tuned": fams, "tuning circuit runs (simulator)": runs_q,
+                                         "circuits sent to the chip": 1, "chip jobs": 1, "QPU shots": shots}})
+
+ONE_TUNE_PREP = prepare_one_tune(ONE_TUNE)
+one_tune_df = run_one_tune(ONE_TUNE_PREP, NOISY)
+print("Noisy IBM Torino model (1 = optimal, 0 = random):"); print(one_tune_df.round(3).to_string(index=False))
+print("\nAverage:", one_tune_df.iloc[:, 2:].mean().round(3).to_dict())
+ledger = compute_ledger(ONE_TUNE_PREP); print("\nCompute ledger:"); print(ledger.to_string())
+one_tune_df.to_csv("one_tune_one_job.csv", index=False); ledger.to_csv("compute_ledger.csv")
+
+RUN_ONE_TUNE_ON_HARDWARE = False   # one job (9 circuits, 16 qubits packed), roughly 20-40 s of QPU time; run section 9 first
+if RUN_ONE_TUNE_ON_HARDWARE:
+    one_tune_hw = run_one_tune(ONE_TUNE_PREP, backend); print(f"\nReal hardware ({backend.name}):")
+    print(one_tune_hw.round(3).to_string(index=False)); print("Average:", one_tune_hw.iloc[:, 2:].mean().round(3).to_dict())
+    one_tune_hw.to_csv("one_tune_one_job_hardware.csv", index=False)
 
 # %% [markdown]
 # ## 12. The Q-Router app: a live demo for the judges

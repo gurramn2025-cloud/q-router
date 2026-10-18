@@ -1,4 +1,4 @@
 problem,n,route,pred_gate,pred_anneal,pred_classical,together,alone,crosstalk_loss
-"finance: stock portfolio (6 stocks, hold 2)",6,gate-QAOA,0.505,0.363,0.948,0.594452042194325,0.5877359685466691,-0.006716073647655918
-healthcare: biomarker selection (6 tests),6,digital-anneal,0.419,0.568,0.993,0.5823454741564453,0.5717615221766675,-0.010583951979777795
-"finance×healthcare: drug pipeline (6 drugs, fund 2)",6,gate-QAOA,0.501,0.362,0.936,0.5894039722628721,0.6207116144885513,0.031307642225679166
+"finance: stock portfolio (6 stocks, hold 2)",6,gate-QAOA,0.506,0.368,0.948,0.5957679578145436,0.5851490290144059,-0.010618928800137706
+healthcare: biomarker selection (6 tests),6,digital-anneal,0.419,0.56,0.995,0.5814418847678419,0.5773011320529365,-0.004140752714905327
+"finance×healthcare: drug pipeline (6 drugs, fund 2)",6,gate-QAOA,0.499,0.363,0.949,0.5922050398858509,0.6162760883622024,0.024071048476351442

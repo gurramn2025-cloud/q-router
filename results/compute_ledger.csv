@@ -1,0 +1,6 @@
+,normal way,"Q-Router (one tune, one job)"
+problems tuned,4,2
+tuning circuit runs (simulator),114,55
+circuits sent to the chip,4,1
+chip jobs,4,1
+QPU shots,16384,4096

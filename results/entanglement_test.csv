@@ -1,0 +1,3 @@
+,"score (1 = best, 0 = random)","entanglement entropy (bits, max 5)",two-qubit gates on IBM Torino
+with entanglement (normal QAOA),0.7725003253542961,1.039277655811849,408.0
+entanglement switched off,0.30777647909759864,2.9668952814687474e-14,0.0
