@@ -4,6 +4,8 @@
 
 Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 
+**The problem it addresses:** quantum time is scarce and noisy, and there are two kinds of quantum computer (gate-based and annealing). Nobody can easily tell whether a decision should go to quantum at all, which kind, or for which part. Q-Router answers that with data, and says honestly when a classical computer is still better. See `USE-CASE.md`.
+
 ## What's in this repo
 
 | File | What it is |
@@ -11,6 +13,7 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 | `Q_Router.ipynb` | The full pipeline. Open it in Google Colab and choose **Runtime → Run all** |
 | `q_router.py` | The same code as a plain Python script (`# %%` cell markers), easier to read and diff |
 | `requirements.txt` | Python packages |
+| `slides/Q-Router_slides.pptx` | The 10-slide presentation, with speaker notes |
 | `results/` | Saved simulator results (CSVs, charts, full run log) |
 | `USE-CASE.md` | The problem, who it affects, and why it matters |
 | `LIMITATIONS.md` | What this project does not prove |
