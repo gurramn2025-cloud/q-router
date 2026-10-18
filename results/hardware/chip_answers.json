@@ -1,0 +1,93 @@
+{
+ "problem": "fund 3 of 8 drug candidates",
+ "true_best": [
+  "onco-II-0",
+  "immu-III-2",
+  "card-III-3"
+ ],
+ "runs": {
+  "gate-logic QAOA | QPU raw": {
+   "job_id": "dba4jioc77vs7382a7sg",
+   "shots": 4096,
+   "most_common_answer": [
+    "immu-III-2",
+    "card-III-7"
+   ],
+   "most_common_count": 63,
+   "most_common_valid_answer": [
+    "card-II-1",
+    "card-I-4",
+    "card-III-7"
+   ],
+   "its_count": 63,
+   "most_common_valid_is_best": false,
+   "shots_on_true_best": 34,
+   "pct_true_best": 0.8,
+   "pct_follow_rule": 47.7,
+   "random_guess_pct_true_best": 0.39
+  },
+  "gate-logic QAOA | QPU mitigated": {
+   "job_id": "dba4m8k24mrc7384sugg",
+   "shots": 4096,
+   "most_common_answer": [
+    "onco-II-0",
+    "card-I-4",
+    "card-III-7"
+   ],
+   "most_common_count": 46,
+   "most_common_valid_answer": [
+    "onco-II-0",
+    "card-I-4",
+    "card-III-7"
+   ],
+   "its_count": 46,
+   "most_common_valid_is_best": false,
+   "shots_on_true_best": 33,
+   "pct_true_best": 0.8,
+   "pct_follow_rule": 45.0,
+   "random_guess_pct_true_best": 0.39
+  },
+  "digital anneal | QPU raw": {
+   "job_id": "dba4usgc77vs7382an80",
+   "shots": 4096,
+   "most_common_answer": [
+    "immu-III-2",
+    "card-III-3",
+    "card-I-4"
+   ],
+   "most_common_count": 64,
+   "most_common_valid_answer": [
+    "immu-III-2",
+    "card-III-3",
+    "card-I-4"
+   ],
+   "its_count": 64,
+   "most_common_valid_is_best": false,
+   "shots_on_true_best": 45,
+   "pct_true_best": 1.1,
+   "pct_follow_rule": 44.0,
+   "random_guess_pct_true_best": 0.39
+  },
+  "digital anneal | QPU mitigated": {
+   "job_id": "dba4v67i0auc7391h920",
+   "shots": 4096,
+   "most_common_answer": [
+    "onco-II-0",
+    "card-II-1",
+    "immu-III-2"
+   ],
+   "most_common_count": 41,
+   "most_common_valid_answer": [
+    "onco-II-0",
+    "card-II-1",
+    "immu-III-2"
+   ],
+   "its_count": 41,
+   "most_common_valid_is_best": false,
+   "shots_on_true_best": 29,
+   "pct_true_best": 0.7,
+   "pct_follow_rule": 35.4,
+   "random_guess_pct_true_best": 0.39
+  }
+ }
+}

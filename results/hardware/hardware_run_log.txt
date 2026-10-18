@@ -1,0 +1,538 @@
+
+##### Q-Router hardware run started 2026-10-17 23:52:54 #####
+
+--- running: import time, json, warnings
+[3s]
+
+--- running: def to_upper(M):
+[0s]
+
+--- running: def markowitz_qubo(mu, sigma, k, risk=0.5):
+[0s]
+
+--- running: def solve_annealer(Q, num_reads=200, sampler=None):
+[0s]
+
+--- running: def lr_params(p, delta=0.6):
+[0s]
+
+--- running: Q, names = pharma_problem(n=10, k=4, seed=1)
+Optimal funded set : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9']
+Annealer best      : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9'] | mean-read ratio 0.949
+QAOA best shot     : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9'] | mean-shot ratio 0.774 (1s)
+Digital anneal     : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9'] | mean-shot ratio 0.744 (p=6, Δ=0.6)
+(We score the MEAN sampled energy. With 2,048 shots and only 1,024 bitstrings, 'best shot' would be cheating.)
+[3s]
+
+--- running: try:
+                         n  density  max_degree  mean_degree  dyn_range  log_fidelity  two_qubit_gates  depth
+pharma (dense)           8    1.000           7         7.00      0.395        -0.552               99    214
+max-cut (sparse)         8    0.500           5         3.50      0.792        -0.373               49    112
+biomarkers (sparsified)  8    0.607           6         4.25      0.478        -0.410               53    141
+[0s]
+
+--- running: FIELD = {"portfolio": "finance", "biomarkers": "healthcare", "pharma": "finance×
+  1/60 finance            n=8  gate=0.48  anneal=0.23  classical=0.96
+  2/60 finance×healthcare n=7  gate=0.51  anneal=0.23  classical=0.96
+  3/60 networks           n=5  gate=0.41  anneal=0.45  classical=0.97
+  4/60 finance            n=7  gate=0.49  anneal=0.22  classical=0.96
+  5/60 networks           n=8  gate=0.28  anneal=0.29  classical=1.00
+  6/60 networks           n=7  gate=0.32  anneal=0.36  classical=1.00
+  7/60 healthcare         n=7  gate=0.54  anneal=0.65  classical=1.00
+  8/60 healthcare         n=8  gate=0.40  anneal=0.34  classical=0.99
+  9/60 finance×healthcare n=7  gate=0.50  anneal=0.23  classical=0.95
+ 10/60 healthcare         n=6  gate=0.44  anneal=0.57  classical=0.99
+ 11/60 networks           n=5  gate=0.47  anneal=0.48  classical=0.99
+ 12/60 healthcare         n=8  gate=0.41  anneal=0.34  classical=0.99
+ 13/60 finance×healthcare n=6  gate=0.50  anneal=0.36  classical=0.94
+ 14/60 networks           n=7  gate=0.30  anneal=0.25  classical=1.00
+ 15/60 networks           n=8  gate=0.26  anneal=0.18  classical=1.00
+ 16/60 healthcare         n=7  gate=0.45  anneal=0.25  classical=0.98
+ 17/60 finance            n=8  gate=0.47  anneal=0.23  classical=0.97
+ 18/60 finance×healthcare n=9  gate=0.38  anneal=0.11  classical=0.95
+ 19/60 healthcare         n=9  gate=0.40  anneal=0.17  classical=0.99
+ 20/60 networks           n=6  gate=0.45  anneal=0.42  classical=1.00
+ 21/60 networks           n=5  gate=0.40  anneal=0.52  classical=1.00
+ 22/60 finance×healthcare n=7  gate=0.50  anneal=0.23  classical=0.96
+ 23/60 finance            n=7  gate=0.50  anneal=0.22  classical=0.96
+ 24/60 finance×healthcare n=9  gate=0.37  anneal=0.11  classical=0.92
+ 25/60 finance            n=9  gate=0.39  anneal=0.11  classical=0.95
+ 26/60 finance×healthcare n=8  gate=0.48  anneal=0.24  classical=0.97
+ 27/60 healthcare         n=8  gate=0.39  anneal=0.35  classical=0.99
+ 28/60 networks           n=9  gate=0.31  anneal=0.26  classical=1.00
+ 29/60 healthcare         n=6  gate=0.44  anneal=0.25  classical=0.97
+ 30/60 finance×healthcare n=9  gate=0.39  anneal=0.11  classical=0.97
+ 31/60 networks           n=5  gate=0.40  anneal=0.42  classical=0.96
+ 32/60 networks           n=8  gate=0.26  anneal=0.21  classical=0.98
+ 33/60 healthcare         n=8  gate=0.47  anneal=0.27  classical=0.97
+ 34/60 finance×healthcare n=7  gate=0.48  anneal=0.22  classical=0.93
+ 35/60 finance            n=6  gate=0.49  anneal=0.37  classical=0.94
+ 36/60 finance            n=7  gate=0.49  anneal=0.22  classical=0.97
+ 37/60 finance×healthcare n=8  gate=0.47  anneal=0.24  classical=0.98
+ 38/60 networks           n=7  gate=0.36  anneal=0.38  classical=1.00
+ 39/60 finance×healthcare n=8  gate=0.49  anneal=0.24  classical=0.98
+ 40/60 finance×healthcare n=5  gate=0.36  anneal=0.42  classical=0.92
+ 41/60 networks           n=6  gate=0.42  anneal=0.46  classical=1.00
+ 42/60 healthcare         n=7  gate=0.40  anneal=0.25  classical=0.99
+ 43/60 healthcare         n=7  gate=0.42  anneal=0.62  classical=1.00
+ 44/60 finance            n=6  gate=0.51  anneal=0.36  classical=0.95
+ 45/60 networks           n=5  gate=0.41  anneal=0.45  classical=1.00
+ 46/60 networks           n=6  gate=0.32  anneal=0.32  classical=1.00
+ 47/60 finance            n=7  gate=0.50  anneal=0.22  classical=0.96
+ 48/60 finance×healthcare n=8  gate=0.47  anneal=0.23  classical=0.98
+ 49/60 finance×healthcare n=7  gate=0.47  anneal=0.23  classical=0.96
+ 50/60 healthcare         n=9  gate=0.40  anneal=0.13  classical=0.98
+ 51/60 healthcare         n=5  gate=0.41  anneal=0.42  classical=0.97
+ 52/60 networks           n=8  gate=0.38  anneal=0.26  classical=1.00
+ 53/60 finance×healthcare n=5  gate=0.42  anneal=0.44  classical=0.93
+ 54/60 networks           n=5  gate=0.35  anneal=0.48  classical=0.98
+ 55/60 healthcare         n=7  gate=0.44  anneal=0.34  classical=0.98
+ 56/60 finance            n=6  gate=0.49  anneal=0.37  classical=0.95
+ 57/60 finance×healthcare n=8  gate=0.48  anneal=0.24  classical=0.97
+ 58/60 healthcare         n=9  gate=0.41  anneal=0.13  classical=0.99
+ 59/60 finance            n=6  gate=0.50  anneal=0.36  classical=0.94
+ 60/60 networks           n=6  gate=0.31  anneal=0.35  classical=1.00
+                 mean abs error  spread of true score (std)
+score_gate                0.030                       0.068
+score_anneal              0.020                       0.126
+score_classical           0.011                       0.021
+(The router is useful where its error is well below the spread. Classical barely varies, so R² is meaningless for it.)
+log_fidelity_anneal    0.511
+log_fidelity           0.177
+mean_degree            0.081
+two_qubit_gates        0.059
+depth                  0.050
+dyn_range              0.045
+density                0.038
+max_degree             0.021
+n                      0.018
+dtype: float64
+[39s]
+
+--- running: from sklearn.decomposition import PCA
+    held_out_field                               trained_on  n_test  mean_abs_error  same_quantum_mode_choice
+           finance finance×healthcare, healthcare, networks      11           0.011                     1.000
+finance×healthcare            finance, healthcare, networks      16           0.014                     0.875
+          networks  finance, finance×healthcare, healthcare      18           0.051                     0.722
+        healthcare    finance, finance×healthcare, networks      15           0.040                     1.000
+
+Structural twins of problem #6 (healthcare, n=7):
+         field  n  density  two_qubit_gates  score_gate  score_anneal  score_classical
+42  healthcare  7    0.286               18       0.416         0.617            1.000
+9   healthcare  6    0.467               26       0.440         0.574            0.986
+19    networks  6    0.533               28       0.454         0.423            0.997
+[1s]
+
+--- running: from sklearn.model_selection import cross_val_predict
+              always gate-QAOA  always digital anneal  learned router  oracle (upper bound)  router picked best  router regret vs oracle  router avg sim time (s)  always classical
+quantum only             0.423                  0.307           0.439                 0.441               0.933                    0.002                    0.339               NaN
+all solvers              0.423                  0.307           0.974                 0.974               1.000                    0.000                    0.012             0.974
+
+Quantum-only routing, broken down by field:
+                    always gate-QAOA  always digital anneal  learned router  oracle (upper bound)  router picked best  router regret vs oracle  router avg sim time (s)
+finance                        0.482                  0.267           0.482                 0.482               1.000                    0.000                    0.411
+finance×healthcare             0.454                  0.242           0.459                 0.459               1.000                    0.000                    0.381
+networks                       0.356                  0.363           0.379                 0.385               0.778                    0.006                    0.249
+healthcare                     0.428                  0.338           0.458                 0.458               1.000                    0.000                    0.349
+[1s]
+
+--- running: SCALER = StandardScaler().fit(df[FEATURES]); ZF = SCALER.transform(df[FEATURES])
+                    own_optimized  transferred_zero_shot  random_donor  no_learning
+field                                                                              
+finance                     0.737                  0.742         0.698        0.696
+finance×healthcare          0.744                  0.750         0.659        0.697
+healthcare                  0.627                  0.527         0.579        0.551
+networks                    0.478                  0.445         0.450        0.433
+
+All problems: {'own_optimized': 0.633, 'transferred_zero_shot': 0.601, 'random_donor': 0.583, 'no_learning': 0.581}
+Zero-shot transfer keeps 95% of the fully optimized quality with ~60× fewer circuit runs.
+Twin vs. random donor: +0.018 (twin better on 63% of problems). No clear gain: the angles transfer because they are near-universal, not because of the match.
+[35s]
+
+--- running: ROUTE_THRESHOLD = 0.5   # a quantum mode is "worthwhile" if predicted to capture
+ sweep                     block  size          route  gate  anneal  classical
+     0     [0, 1, 7, 10, 11, 13]     6      classical 0.483   0.360      0.951
+     0 [2, 3, 4, 5, 6, 8, 9, 12]     8      classical 0.452   0.223      0.974
+     0                  [14, 15]     2 digital-anneal 0.472   0.590      0.994
+     1     [0, 1, 7, 10, 11, 13]     6      classical 0.487   0.362      0.949
+     1 [2, 3, 4, 5, 6, 8, 9, 12]     8      classical 0.452   0.223      0.974
+     1                  [14, 15]     2 digital-anneal 0.472   0.590      0.994
+Decomposed solution ratio: 1.0000   (feasible: True)
+[1s]
+
+--- running: when = df.groupby("field").agg(density=("density", "mean"), gate=("score_gate", 
+                    density   gate  anneal  anneal_wins
+field                                                  
+finance               1.000  0.482   0.267        0.000
+finance×healthcare    1.000  0.454   0.242        0.125
+healthcare            0.668  0.428   0.338        0.267
+networks              0.607  0.356   0.363        0.667
+[0s]
+
+--- running: def pharma_trials_problem(n_drugs=8, k=3, n_sites=10, link=0.1, seed=4):
+ piece               part  qubits  density 2q gates gate / anneal  ideal gate  ideal anneal  predicted gate  predicted anneal  noisy-sim gate  noisy-sim anneal router picked better on noisy chip  right call
+     0 trial-site network       7     0.57               45 / 319       0.412         0.844           0.283             0.210           0.370             0.458          gate               anneal       False
+     1 trial-site network       3     1.00                 9 / 60       0.437         0.931           0.408             0.687           0.404             0.701        anneal               anneal        True
+     2       drug funding       8     1.00               99 / 685       0.698         0.791           0.402             0.043           0.596             0.419          gate                 gate        True
+
+Average piece score on the noisy IBM Torino model (1 = optimal, 0 = random):
+all gate-QAOA         0.457
+all digital anneal    0.526
+router's mix          0.556
+best possible mix     0.585
+
+Full 18-variable answer rebuilt from the pieces (best shot per piece, ideal simulator):
+                   ratio found_optimum drugs_funded_ok
+all gate-QAOA        1.0          True            True
+all digital anneal   1.0          True            True
+router's mix         1.0          True            True
+classical            1.0          True            True
+[52s]
+
+--- running: RUN_ON_HARDWARE = True   # flip to True when the simulator results look right
+Traceback (most recent call last):
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\qiskit_ibm_runtime\accounts\account.py", line 367, in list_instances
+    result = client.search(
+             ^^^^^^^^^^^^^^
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\ibm_platform_services\global_search_v2.py", line 228, in search
+    request = self.prepare_request(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\ibm_cloud_sdk_core\base_service.py", line 441, in prepare_request
+    self.authenticator.authenticate(request)
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\ibm_cloud_sdk_core\authenticators\iam_request_based_authenticator.py", line 64, in authenticate
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     ^^^^^^^^^^^^^^^^^^^^
+    response = self._request(
+               ^^^^^^^^^^^^^^
+    raise ApiException(response.status_code, http_response=response)
+ibm_cloud_sdk_core.api_exception.ApiException: Error: Provided API key could not be found., Status code: 400
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\gurra\Projects\q-router\run_hardware.py", line 77, in <module>
+    exec(compile(src, "cell", "exec"), g)
+  File "cell", line 5, in <module>
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\qiskit_ibm_runtime\qiskit_runtime_service.py", line 272, in __init__
+    if self._account.instance not in [inst["crn"] for inst in self.instances()]:
+                                                              ^^^^^^^^^^^^^^^^
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\qiskit_ibm_runtime\qiskit_runtime_service.py", line 1481, in instances
+    self._all_instances = self._account.list_instances()
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\gurra\Projects\q-router\.venv\Lib\site-packages\qiskit_ibm_runtime\accounts\account.py", line 382, in list_instances
+    raise InvalidAccountError(
+!!! This cell failed. Results saved so far are in C:\Users\gurra\Projects\q-router\hw_run
+[1186s]
+
+--- running: RUN_BREAKDOWN_ON_HARDWARE = True   # one job, roughly 30-60 s of QPU time
+Traceback (most recent call last):
+  File "C:\Users\gurra\Projects\q-router\run_hardware.py", line 77, in <module>
+    exec(compile(src, "cell", "exec"), g)
+  File "cell", line 3, in <module>
+NameError: name 'backend' is not defined
+!!! This cell failed. Results saved so far are in C:\Users\gurra\Projects\q-router\hw_run
+[0s]
+
+--- running: RUN_SWEEP = False
+[0s]
+
+--- running: from qiskit import QuantumCircuit
+Traceback (most recent call last):
+  File "C:\Users\gurra\Projects\q-router\run_hardware.py", line 77, in <module>
+    exec(compile(src, "cell", "exec"), g)
+  File "cell", line 63, in <module>
+NameError: name 'backend' is not defined
+!!! This cell failed. Results saved so far are in C:\Users\gurra\Projects\q-router\hw_run
+[0s]
+
+--- running: from sklearn.cluster import KMeans
+Noisy IBM Torino model (1 = optimal, 0 = random):
+                          problem  shape family  own settings, alone  shared settings, alone  shared settings, packed
+         finance: stock portfolio             0                0.417                   0.461                    0.438
+     healthcare: diagnostic tests             1                0.590                   0.581                    0.591
+finance×healthcare: drug pipeline             0                0.510                   0.523                    0.514
+ networks: referral network split             0                0.541                   0.458                    0.470
+
+Average: {'own settings, alone': 0.514, 'shared settings, alone': 0.506, 'shared settings, packed': 0.503}
+
+Compute ledger:
+                                 normal way  Q-Router (one tune, one job)
+problems tuned                            4                             2
+tuning circuit runs (simulator)         110                            55
+circuits sent to the chip                 4                             1
+chip jobs                                 4                             1
+QPU shots                             16384                          4096
+Traceback (most recent call last):
+  File "C:\Users\gurra\Projects\q-router\run_hardware.py", line 77, in <module>
+    exec(compile(src, "cell", "exec"), g)
+  File "cell", line 59, in <module>
+NameError: name 'backend' is not defined
+!!! This cell failed. Results saved so far are in C:\Users\gurra\Projects\q-router\hw_run
+[52s]
+
+##### Finished 2026-10-18 00:15:49. Results are in C:\Users\gurra\Projects\q-router\hw_run #####
+
+##### Q-Router hardware run started 2026-10-18 00:16:56 #####
+
+Paste each value and press Enter. Nothing appears while you paste; that is normal.
+  received 44 characters
+
+Connected to IBM. Least busy chip: ibm_kingston. Now running the simulator setup (about 5 minutes)...
+
+--- running: import time, json, warnings
+[2s]
+
+--- running: def to_upper(M):
+[0s]
+
+--- running: def markowitz_qubo(mu, sigma, k, risk=0.5):
+[0s]
+
+--- running: def solve_annealer(Q, num_reads=200, sampler=None):
+[0s]
+
+--- running: def lr_params(p, delta=0.6):
+[0s]
+
+--- running: Q, names = pharma_problem(n=10, k=4, seed=1)
+Optimal funded set : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9']
+Annealer best      : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9'] | mean-read ratio 0.950
+QAOA best shot     : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9'] | mean-shot ratio 0.779 (1s)
+Digital anneal     : ['card-II-1', 'neur-III-6', 'onco-I-8', 'onco-I-9'] | mean-shot ratio 0.763 (p=6, Δ=0.3)
+(We score the MEAN sampled energy. With 2,048 shots and only 1,024 bitstrings, 'best shot' would be cheating.)
+[3s]
+
+--- running: try:
+                         n  density  ...  two_qubit_gates  depth
+pharma (dense)           8    1.000  ...               99    214
+max-cut (sparse)         8    0.500  ...               49    112
+biomarkers (sparsified)  8    0.607  ...               53    141
+
+[3 rows x 8 columns]
+[0s]
+
+--- running: FIELD = {"portfolio": "finance", "biomarkers": "healthcare", "pharma": "finance×
+  1/60 finance            n=8  gate=0.47  anneal=0.23  classical=0.97
+  2/60 finance×healthcare n=7  gate=0.51  anneal=0.23  classical=0.97
+  3/60 networks           n=5  gate=0.40  anneal=0.46  classical=0.98
+  4/60 finance            n=7  gate=0.50  anneal=0.22  classical=0.96
+  5/60 networks           n=8  gate=0.28  anneal=0.29  classical=1.00
+  6/60 networks           n=7  gate=0.34  anneal=0.36  classical=1.00
+  7/60 healthcare         n=7  gate=0.51  anneal=0.64  classical=1.00
+  8/60 healthcare         n=8  gate=0.39  anneal=0.34  classical=0.99
+  9/60 finance×healthcare n=7  gate=0.51  anneal=0.23  classical=0.96
+ 10/60 healthcare         n=6  gate=0.44  anneal=0.53  classical=0.98
+ 11/60 networks           n=5  gate=0.47  anneal=0.48  classical=0.99
+ 12/60 healthcare         n=8  gate=0.41  anneal=0.35  classical=1.00
+ 13/60 finance×healthcare n=6  gate=0.49  anneal=0.36  classical=0.95
+ 14/60 networks           n=7  gate=0.33  anneal=0.24  classical=1.00
+ 15/60 networks           n=8  gate=0.26  anneal=0.19  classical=1.00
+ 16/60 healthcare         n=7  gate=0.45  anneal=0.26  classical=0.98
+ 17/60 finance            n=8  gate=0.47  anneal=0.23  classical=0.96
+ 18/60 finance×healthcare n=9  gate=0.37  anneal=0.11  classical=0.96
+ 19/60 healthcare         n=9  gate=0.40  anneal=0.17  classical=0.98
+ 20/60 networks           n=6  gate=0.46  anneal=0.41  classical=0.99
+ 21/60 networks           n=5  gate=0.48  anneal=0.54  classical=1.00
+ 22/60 finance×healthcare n=7  gate=0.51  anneal=0.23  classical=0.96
+ 23/60 finance            n=7  gate=0.50  anneal=0.22  classical=0.96
+ 24/60 finance×healthcare n=9  gate=0.36  anneal=0.10  classical=0.92
+ 25/60 finance            n=9  gate=0.38  anneal=0.11  classical=0.95
+ 26/60 finance×healthcare n=8  gate=0.48  anneal=0.24  classical=0.98
+ 27/60 healthcare         n=8  gate=0.41  anneal=0.34  classical=0.99
+ 28/60 networks           n=9  gate=0.30  anneal=0.26  classical=1.00
+ 29/60 healthcare         n=6  gate=0.41  anneal=0.26  classical=0.97
+ 30/60 finance×healthcare n=9  gate=0.39  anneal=0.11  classical=0.97
+ 31/60 networks           n=5  gate=0.37  anneal=0.41  classical=0.95
+ 32/60 networks           n=8  gate=0.27  anneal=0.21  classical=0.97
+ 33/60 healthcare         n=8  gate=0.47  anneal=0.27  classical=0.98
+ 34/60 finance×healthcare n=7  gate=0.49  anneal=0.22  classical=0.94
+ 35/60 finance            n=6  gate=0.50  anneal=0.37  classical=0.93
+ 36/60 finance            n=7  gate=0.50  anneal=0.22  classical=0.96
+ 37/60 finance×healthcare n=8  gate=0.48  anneal=0.24  classical=0.98
+ 38/60 networks           n=7  gate=0.35  anneal=0.37  classical=1.00
+ 39/60 finance×healthcare n=8  gate=0.49  anneal=0.24  classical=0.98
+ 40/60 finance×healthcare n=5  gate=0.39  anneal=0.41  classical=0.94
+ 41/60 networks           n=6  gate=0.41  anneal=0.47  classical=1.00
+ 42/60 healthcare         n=7  gate=0.39  anneal=0.25  classical=0.99
+ 43/60 healthcare         n=7  gate=0.40  anneal=0.60  classical=1.00
+ 44/60 finance            n=6  gate=0.50  anneal=0.36  classical=0.95
+ 45/60 networks           n=5  gate=0.43  anneal=0.43  classical=1.00
+ 46/60 networks           n=6  gate=0.34  anneal=0.33  classical=1.00
+ 47/60 finance            n=7  gate=0.46  anneal=0.23  classical=0.96
+ 48/60 finance×healthcare n=8  gate=0.48  anneal=0.23  classical=0.98
+ 49/60 finance×healthcare n=7  gate=0.49  anneal=0.23  classical=0.96
+ 50/60 healthcare         n=9  gate=0.42  anneal=0.13  classical=0.98
+ 51/60 healthcare         n=5  gate=0.43  anneal=0.42  classical=0.97
+ 52/60 networks           n=8  gate=0.35  anneal=0.26  classical=1.00
+ 53/60 finance×healthcare n=5  gate=0.41  anneal=0.43  classical=0.93
+ 54/60 networks           n=5  gate=0.39  anneal=0.48  classical=0.99
+ 55/60 healthcare         n=7  gate=0.44  anneal=0.33  classical=0.97
+ 56/60 finance            n=6  gate=0.51  anneal=0.36  classical=0.95
+ 57/60 finance×healthcare n=8  gate=0.48  anneal=0.24  classical=0.97
+ 58/60 healthcare         n=9  gate=0.40  anneal=0.13  classical=0.98
+ 59/60 finance            n=6  gate=0.50  anneal=0.36  classical=0.94
+ 60/60 networks           n=6  gate=0.30  anneal=0.35  classical=1.00
+                 mean abs error  spread of true score (std)
+score_gate                0.029                       0.068
+score_anneal              0.019                       0.123
+score_classical           0.011                       0.021
+(The router is useful where its error is well below the spread. Classical barely varies, so R² is meaningless for it.)
+log_fidelity_anneal    0.531
+log_fidelity           0.150
+mean_degree            0.068
+dyn_range              0.065
+depth                  0.055
+two_qubit_gates        0.045
+max_degree             0.036
+density                0.029
+n                      0.020
+dtype: float64
+[39s]
+
+--- running: from sklearn.decomposition import PCA
+    held_out_field                               trained_on  n_test  mean_abs_error  same_quantum_mode_choice
+           finance finance×healthcare, healthcare, networks      11           0.014                     1.000
+finance×healthcare            finance, healthcare, networks      16           0.013                     0.875
+          networks  finance, finance×healthcare, healthcare      18           0.049                     0.722
+        healthcare    finance, finance×healthcare, networks      15           0.039                     0.933
+
+Structural twins of problem #6 (healthcare, n=7):
+         field  n  density  two_qubit_gates  score_gate  score_anneal  score_classical
+42  healthcare  7    0.286               18       0.397         0.596            1.000
+9   healthcare  6    0.467               26       0.445         0.530            0.982
+19    networks  6    0.533               28       0.461         0.410            0.991
+[1s]
+
+--- running: from sklearn.model_selection import cross_val_predict
+              always gate-QAOA  always digital anneal  learned router  oracle (upper bound)  router picked best  router regret vs oracle  router avg sim time (s)  always classical
+quantum only             0.425                  0.305           0.436                 0.440               0.867                    0.004                    0.352               NaN
+all solvers              0.425                  0.305           0.974                 0.974               1.000                    0.000                    0.013             0.974
+
+Quantum-only routing, broken down by field:
+                    always gate-QAOA  always digital anneal  learned router  oracle (upper bound)  router picked best  router regret vs oracle  router avg sim time (s)
+finance                        0.480                  0.266           0.480                 0.480               1.000                    0.000                    0.411
+finance×healthcare             0.457                  0.241           0.459                 0.460               0.938                    0.001                    0.383
+networks                       0.362                  0.363           0.375                 0.386               0.667                    0.011                    0.251
+healthcare                     0.425                  0.334           0.453                 0.453               0.933                    0.001                    0.398
+[1s]
+
+--- running: SCALER = StandardScaler().fit(df[FEATURES]); ZF = SCALER.transform(df[FEATURES])
+                    own_optimized  transferred_zero_shot  random_donor  no_learning
+field                                                                              
+finance                     0.734                  0.737         0.696        0.692
+finance×healthcare          0.749                  0.719         0.662        0.695
+healthcare                  0.624                  0.547         0.574        0.552
+networks                    0.485                  0.458         0.453        0.432
+
+All problems: {'own_optimized': 0.636, 'transferred_zero_shot': 0.601, 'random_donor': 0.583, 'no_learning': 0.58}
+Zero-shot transfer keeps 95% of the fully optimized quality with ~60× fewer circuit runs.
+Twin vs. random donor: +0.018 (twin better on 53% of problems). No clear gain: the angles transfer because they are near-universal, not because of the match.
+[41s]
+
+--- running: ROUTE_THRESHOLD = 0.5   # a quantum mode is "worthwhile" if predicted to capture
+ sweep                     block  size          route  gate  anneal  classical
+     0     [0, 1, 7, 10, 11, 13]     6      classical 0.480   0.361      0.954
+     0 [2, 3, 4, 5, 6, 8, 9, 12]     8      classical 0.444   0.218      0.976
+     0                  [14, 15]     2 digital-anneal 0.466   0.587      0.996
+     1     [0, 1, 7, 10, 11, 13]     6      classical 0.480   0.361      0.954
+     1 [2, 3, 4, 5, 6, 8, 9, 12]     8      classical 0.444   0.218      0.976
+     1                  [14, 15]     2 digital-anneal 0.466   0.587      0.996
+Decomposed solution ratio: 1.0000   (feasible: True)
+[1s]
+
+--- running: when = df.groupby("field").agg(density=("density", "mean"), gate=("score_gate", 
+                    density   gate  anneal  anneal_wins
+field                                                  
+finance               1.000  0.480   0.266        0.000
+finance×healthcare    1.000  0.457   0.241        0.125
+healthcare            0.668  0.425   0.334        0.200
+networks              0.607  0.362   0.363        0.611
+[0s]
+
+--- running: def pharma_trials_problem(n_drugs=8, k=3, n_sites=10, link=0.1, seed=4):
+ piece               part  qubits  density 2q gates gate / anneal  ideal gate  ideal anneal  predicted gate  predicted anneal  noisy-sim gate  noisy-sim anneal router picked better on noisy chip  right call
+     0 trial-site network       7     0.57               45 / 319       0.448         0.832           0.307             0.207           0.380             0.464          gate               anneal       False
+     1 trial-site network       3     1.00                 9 / 60       0.442         0.926           0.413             0.683           0.404             0.688        anneal               anneal        True
+     2       drug funding       8     1.00               99 / 685       0.678         0.799           0.390             0.044           0.596             0.449          gate                 gate        True
+
+Average piece score on the noisy IBM Torino model (1 = optimal, 0 = random):
+all gate-QAOA         0.460
+all digital anneal    0.534
+router's mix          0.555
+best possible mix     0.583
+
+Full 18-variable answer rebuilt from the pieces (best shot per piece, ideal simulator):
+                   ratio found_optimum drugs_funded_ok
+all gate-QAOA        1.0          True            True
+all digital anneal   1.0          True            True
+router's mix         1.0          True            True
+classical            1.0          True            True
+[51s]
+
+--- running: RUN_ON_HARDWARE = True   # flip to True when the simulator results look right
+Using ibm_kingston
+
+============================================================
+ READY TO USE THE REAL QUANTUM COMPUTER on: ibm_kingston
+ Jobs that will be submitted (one after another):
+   Section 9   both quantum kinds, raw + mitigated   4 jobs
+   Section 9b  the 3 break-down pieces, both kinds   1 job
+   Section 11  3 industries packed on one chip       1 job
+   Section 11b one tune, one job                     1 job
+ Estimated QPU time: about 2-3 minutes of your 10.
+ Queue waits on the free plan can be long; leave this window open.
+============================================================
+Type RUN to submit these jobs (anything else cancels):                          mode  2q gates  ideal sim  noisy sim  QPU raw  QPU mitigated
+              gate-logic QAOA     102.0      0.724      0.668    0.636          0.578
+               digital anneal     658.0      0.800      0.672    0.546          0.361
+classical simulated annealing       NaN      0.935        NaN      NaN            NaN
+[1559s]
+saved hardware_summary.json
+
+--- running: RUN_BREAKDOWN_ON_HARDWARE = True   # one job, roughly 30-60 s of QPU time
+Hardware job done on ibm_kingston
+ piece               part  qubits  density  noisy-sim gate  noisy-sim anneal  QPU gate  QPU anneal router picked better on QPU  router right on QPU
+     0 trial-site network       7     0.57           0.380             0.464     0.384       0.420          gate        anneal                False
+     1 trial-site network       3     1.00           0.404             0.688     0.407       0.725        anneal        anneal                 True
+     2       drug funding       8     1.00           0.596             0.449     0.546       0.336          gate          gate                 True
+[35s]
+
+--- running: RUN_SWEEP = False
+[0s]
+
+--- running: from qiskit import QuantumCircuit
+Packed 18 qubits from 3 problems into one circuit on ibm_kingston
+                                            problem  n          route  pred_gate  pred_anneal  pred_classical  together  alone  crosstalk_loss
+        finance: stock portfolio (6 stocks, hold 2)  6      gate-QAOA      0.499        0.362           0.943     0.560  0.591           0.030
+          healthcare: biomarker selection (6 tests)  6 digital-anneal      0.434        0.549           0.994     0.554  0.566           0.012
+finance×healthcare: drug pipeline (6 drugs, fund 2)  6      gate-QAOA      0.490        0.362           0.951     0.586  0.598           0.012
+[21s]
+
+--- running: from sklearn.cluster import KMeans
+Noisy IBM Torino model (1 = optimal, 0 = random):
+                          problem  shape family  own settings, alone  shared settings, alone  shared settings, packed
+         finance: stock portfolio             0                0.453                   0.447                    0.459
+     healthcare: diagnostic tests             1                0.549                   0.550                    0.550
+finance×healthcare: drug pipeline             0                0.533                   0.538                    0.543
+ networks: referral network split             0                0.571                   0.419                    0.412
+
+Average: {'own settings, alone': 0.527, 'shared settings, alone': 0.488, 'shared settings, packed': 0.491}
+
+Compute ledger:
+                                 normal way  Q-Router (one tune, one job)
+problems tuned                            4                             2
+tuning circuit runs (simulator)         110                            55
+circuits sent to the chip                 4                             1
+chip jobs                                 4                             1
+QPU shots                             16384                          4096
+
+Real hardware (ibm_kingston):
+                          problem  shape family  own settings, alone  shared settings, alone  shared settings, packed
+         finance: stock portfolio             0                0.442                   0.444                    0.421
+     healthcare: diagnostic tests             1                0.558                   0.564                    0.538
+finance×healthcare: drug pipeline             0                0.529                   0.513                    0.516
+ networks: referral network split             0                0.584                   0.406                    0.424
+Average: {'own settings, alone': 0.528, 'shared settings, alone': 0.482, 'shared settings, packed': 0.475}
+[80s]
+
+##### Finished 2026-10-18 00:51:11. Results are in C:\Users\gurra\Projects\q-router\hw_run #####

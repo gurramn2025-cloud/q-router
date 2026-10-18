@@ -13,4 +13,7 @@
 - **Sharing settings costs some quality.** In section 11b, one tuning per shape family loses about 0.02 on average, almost all of it on a network problem grouped with finance problems.
 - **The entanglement test is on a perfect simulator.** It shows entanglement matters for QAOA's score, not that it gives any advantage over classical methods.
 - **A simulator quirk we work around.** qiskit-aer's SamplerV2 corrupted the results of a smaller circuit batched after a larger one, which at first looked like a huge crosstalk effect. On simulators each circuit now runs as its own job; IBM Runtime handles batches correctly.
-- **Limited hardware budget.** The Open Plan gives 10 QPU minutes per 28 days, so hardware experiments are single runs without repeated trials or error bars.
+- **On real hardware, the most common answer was not the best one.** The true best drug set appeared in only about 1% of shots (2–3× random guessing); a laptop finds it every time.
+- **Our device model was too optimistic for long circuits.** The noisy simulation predicted 0.67 for the anneal; the real chip gave 0.55.
+- **Error mitigation did not help.** Dynamical decoupling and Pauli twirling lowered real-chip scores, most for the long annealing circuit (0.55 → 0.36). Zero-noise extrapolation was only demonstrated in simulation.
+- **Limited hardware budget.** The Open Plan gives 10 QPU minutes per 28 days, so each hardware experiment was run once, without repeated trials or error bars.

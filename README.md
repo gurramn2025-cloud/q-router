@@ -13,9 +13,10 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 | `Q_Router.ipynb` | The full pipeline. Open it in Google Colab and choose **Runtime → Run all** |
 | `q_router.py` | The same code as a plain Python script (`# %%` cell markers), easier to read and diff |
 | `requirements.txt` | Python packages |
-| `slides/Q-Router_slides.pptx` | The 10-slide presentation, with speaker notes |
+| `slides/Q-Router_presentation.pptx` | The 7-minute, 11-slide presentation, with detailed speaker notes |
 | `slides/Q-Router_complete_guide.pptx` | A 58-slide guide explaining every step, decision, test and chart in plain language |
 | `results/` | Saved simulator results (CSVs, charts, full run log) |
+| `results/hardware/` | Real IBM hardware results from ibm_kingston: raw counts, summaries, decoded answers, run log |
 | `USE-CASE.md` | The problem, who it affects, and why it matters |
 | `LIMITATIONS.md` | What this project does not prove |
 
@@ -60,7 +61,16 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 - **Simultaneous solving (section 11):** three problems from three fields packed on 18 qubits score within 0.03 of running each alone (noisy simulator).
 - **Error mitigation (section 7):** zero-noise extrapolation recovers about a quarter of the energy lost to noise (noisy simulator).
 
-Real-hardware results are pending. Every hardware cell has been dry-run against a fake IBM Torino.
+**Real IBM hardware (Oct 18, 2026, ibm_kingston, a 156-qubit Heron r2; 7 jobs, Open Plan; full log in `results/hardware/`):**
+
+- **Flagship drug problem (fund 3 of 8), score 1 = best, 0 = random:** gate-based QAOA 0.72 (perfect simulator) → 0.67 (noisy simulation of the device) → **0.64 (real chip)**; digital anneal 0.80 → 0.67 → **0.55**. With no errors annealing wins; on the real chip gate-based wins, because the anneal needs about 6× more two-qubit gates (658 vs. 102). The laptop scores 0.93.
+- **What the chip answered:** its most common answer was a good set but not the best one. The true best set (onco-II-0, immu-III-2, card-III-3) appeared in 0.7–1.1% of shots, 2–3× the random-guess rate (0.4%), and it was the best-scoring answer in every run's 4,096 shots (section 9a).
+- **Error mitigation hurt here:** dynamical decoupling + Pauli twirling lowered scores (gate 0.64 → 0.58, anneal 0.55 → 0.36).
+- **Break-down on hardware (section 9b):** gate-based won the dense drug piece (0.55 vs. 0.34); annealing won both sparse trial-site pieces (0.42 vs. 0.38, 0.73 vs. 0.41). The router's mix (0.55) beat all-gate (0.45) and all-anneal (0.49); the router chose correctly on 2 of 3 pieces.
+- **Three industries on one chip (section 11):** packing cost each problem only 0.01–0.03 (measured crosstalk).
+- **One tune, one job (section 11b):** 0.528 (normal way) → 0.475 (shared settings, packed): 90% of the quality for 4× fewer shots and 1 job instead of 4.
+
+Every hardware cell was dry-run against a fake IBM Torino before it was run.
 
 ## Prior work
 

@@ -1,0 +1,5 @@
+problem,shape family,"own settings, alone","shared settings, alone","shared settings, packed"
+finance: stock portfolio,0,0.4415955086936589,0.44393379665833865,0.4213996723801942
+healthcare: diagnostic tests,1,0.558337379993021,0.5644677305423628,0.5378514493997
+finance×healthcare: drug pipeline,0,0.5294362787854828,0.513058013263879,0.5156240071130292
+networks: referral network split,0,0.5838532164089862,0.4056740213018193,0.42402444009010765

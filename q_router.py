@@ -752,6 +752,34 @@ if RUN_ON_HARDWARE:
     json.dump(results, open("hardware_results.json", "w"))
 
 # %% [markdown]
+# ### 9a. What did the real chip actually answer?
+# Every shot is one complete answer (which drugs to fund). Here we turn the chip's measurements into decisions: its **most common answer that follows the rule** (fund exactly 3), the **best answer anywhere in its shots** (each shot checked on the score sheet, which is how you'd use the output in practice), and **how often it landed on the true best set** compared with random guessing (1 in 256).
+
+# %%
+try:
+    hw_counts = json.load(open("hardware_results.json"))
+except FileNotFoundError:
+    hw_counts = None
+    print("No hardware results yet: run section 9 with RUN_ON_HARDWARE = True.")
+if hw_counts:
+    Qh, names_h = pharma_problem(n=8, k=3, seed=1); x_h, E_h = solve_exact(Qh)
+    show = lambda x: ", ".join(names_h[i] for i in np.flatnonzero(x))
+    print("True best set (brute force):", show(x_h))
+    rows = []
+    for key, v in hw_counts.items():
+        if key == "backend": continue
+        counts = v["counts"]; shots = sum(counts.values())
+        valid = {b: c for b, c in counts.items() if bits_to_x(b).sum() == 3}
+        top = max(valid, key=valid.get)
+        best = min(counts, key=lambda b: energy(Qh, bits_to_x(b)))
+        hits = sum(c for b, c in counts.items() if abs(energy(Qh, bits_to_x(b)) - E_h.min()) < 1e-9)
+        rows.append({"run": key, "most common valid answer": show(bits_to_x(top)), "times": valid[top],
+                     "best answer in its shots": show(bits_to_x(best)),
+                     "shots on the true best": f"{100 * hits / shots:.1f}% (random: {100 / 2 ** len(Qh):.1f}%)",
+                     "shots that follow the rule": f"{100 * sum(valid.values()) / shots:.0f}%"})
+    print(pd.DataFrame(rows).to_string(index=False))
+
+# %% [markdown]
 # ## 9b. The break-down on real hardware: gate vs. anneal, piece by piece (1 job)
 # The section 6b pieces, each solved **both** ways on the real chip with settings tuned on the simulator. Every circuit goes into **one** batched job with error mitigation (dynamical decoupling + twirling). Run section 9 first (it creates `backend`).
 
@@ -994,21 +1022,37 @@ def saved_hardware():
         except Exception: continue
     return pd.DataFrame([{"note": "No hardware results saved yet. Run sections 9-11 with the hardware flags on."}])
 
+def sample_counts(Q, params, reps=1, shots=1024):
+    """Run a recipe with fixed dials on the simulator and return every measured answer."""
+    isa = generate_preset_pass_manager(optimization_level=1, backend=LOCAL).run(build_qaoa(Q, reps))
+    return Sampler(mode=LOCAL).run([(isa, params)], shots=shots).result()[0].data.meas.get_counts()
+
+def best_of(counts, Q):
+    """The decision a user would take: every sampled answer is checked on the score sheet; keep the best."""
+    b = min(counts, key=lambda s: energy(Q, bits_to_x(s))); return bits_to_x(b)
+
 def run_demo(selected, n):
     n = int(n); table, bars = [], []
     for name in selected:
         Q, labels = BUILDERS[name](n)
         mode, preds, feats = route(Q)
-        x_best, E_all = solve_exact(Q)
+        x_true, E_all = solve_exact(Q)
         j = cross_field_twin(SCALER.transform(pd.DataFrame([feats])[FEATURES])[0], BUILDER_FIELD[name])
-        scores = {"classical": approx_ratio(solve_annealer(Q, num_reads=100)[1].mean(), E_all),
-                  "gate-QAOA": approx_ratio(run_fixed(Q, GATE_PARAMS[j]), E_all),               # zero-shot borrowed angles
-                  "digital-anneal": approx_ratio(solve_digital_anneal(Q, ANNEAL_P, ANNEAL_DELTA, shots=1024)["mean_energy"], E_all)}
-        table.append({"Problem": name, "Qubits": n,
-                      "Structural twin from": f"{df.loc[j, 'field']} (n={df.loc[j, 'n']})",
+        x_sa, e_sa = solve_annealer(Q, num_reads=100)
+        c_gate = sample_counts(Q, GATE_PARAMS[j])                                          # zero-shot borrowed angles
+        c_ann = sample_counts(Q, lr_params(ANNEAL_P, ANNEAL_DELTA), reps=ANNEAL_P)
+        scores = {"classical": approx_ratio(e_sa.mean(), E_all), "gate-QAOA": approx_ratio(mean_energy(c_gate, Q), E_all),
+                  "digital-anneal": approx_ratio(mean_energy(c_ann, Q), E_all)}
+        answers = {"classical": x_sa, "gate-QAOA": best_of(c_gate, Q), "digital-anneal": best_of(c_ann, Q)}
+        pick = answers[mode]
+        show = lambda x: ", ".join(str(labels[i]) for i in np.flatnonzero(x)) or "(none)"
+        table.append({"Problem": name, "Router's choice": mode,
+                      "Router's answer": show(pick),
+                      "Is it the true best?": "yes" if abs(energy(Q, pick) - E_all.min()) < 1e-9 else "no",
+                      "True best (checked by brute force)": show(x_true),
+                      "Score of choice (simulator)": round(scores[mode], 3),
                       "Predicted gate / anneal / classical": f"{preds['gate']:.2f} / {preds['anneal']:.2f} / {preds['classical']:.2f}",
-                      "Router's choice": mode, "Score of choice (simulator)": round(scores[mode], 3),
-                      "Verified best decision": ", ".join(str(labels[i]) for i in np.flatnonzero(x_best))})
+                      "Structural twin from": f"{df.loc[j, 'field']} (n={df.loc[j, 'n']})", "Qubits": n})
         bars.append((name.split(":")[0], scores, mode))
     fig, ax = plt.subplots(figsize=(9, 4)); w = 0.26
     for k, method in enumerate(["classical", "gate-QAOA", "digital-anneal"]):
@@ -1022,7 +1066,7 @@ def run_demo(selected, n):
     return pd.DataFrame(table), fig
 
 with gr.Blocks(title="Q-Router") as app:
-    gr.Markdown("# Q-Router\nOne quantum engine for finance and healthcare decisions. It recognizes each problem's shape, borrows what it learned from other industries, and routes it to the best quantum or classical method.")
+    gr.Markdown("# Q-Router\nPick decisions and press the button. For each one you get the answer (what to choose), which computer produced it, and whether it matches the true best answer.\n\nOne quantum engine for finance and healthcare decisions. It recognizes each problem's shape, borrows what it learned from other industries, and routes it to the best quantum or classical method.")
     with gr.Row():
         pick = gr.CheckboxGroup(list(BUILDERS), value=list(BUILDERS), label="Problems to solve together")
         size = gr.Slider(5, 9, value=6, step=1, label="Choices per problem (= qubits)")
