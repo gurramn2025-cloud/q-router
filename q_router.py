@@ -890,7 +890,7 @@ MULTI = {"finance: stock portfolio (6 stocks, hold 2)": portfolio_problem(6, 2)[
 RUN_SIMULTANEOUS_ON_HARDWARE = False   # needs section 9's `backend`; one job, ~seconds of QPU time
 target_backend = backend if RUN_SIMULTANEOUS_ON_HARDWARE else AerSimulator.from_backend(DEVICE)
 multi_table = solve_simultaneous(MULTI, target_backend)
-multi_table.to_csv("simultaneous_results.csv", index=False)
+multi_table.to_csv("simultaneous_results_hardware.csv" if RUN_SIMULTANEOUS_ON_HARDWARE else "simultaneous_results.csv", index=False)
 
 # %% [markdown]
 # ## 11b. One tune, one job: pattern recognition as a compute saver
@@ -984,12 +984,15 @@ BUILDERS = {
 }
 
 def saved_hardware():
-    for f in ["simultaneous_results.csv", "noise_cliff.csv", "hardware_results.json"]:
-        try:
-            return pd.read_csv(f).round(3) if f.endswith(".csv") else pd.DataFrame([{"file": f, "note": "saved"}])
-        except Exception:
-            continue
-    return pd.DataFrame([{"note": "No hardware results saved yet. Run sections 9–11 with the hardware flags on."}])
+    """Real-hardware results only (simulator results live in other files)."""
+    try:
+        b = pd.read_csv("breakdown_comparison.csv")
+        if "QPU gate" in b: return b[["piece", "part", "qubits", "QPU gate", "QPU anneal", "router picked", "better on QPU"]].round(3)
+    except Exception: pass
+    for f in ["one_tune_one_job_hardware.csv", "simultaneous_results_hardware.csv", "noise_cliff.csv"]:
+        try: return pd.read_csv(f).round(3)
+        except Exception: continue
+    return pd.DataFrame([{"note": "No hardware results saved yet. Run sections 9-11 with the hardware flags on."}])
 
 def run_demo(selected, n):
     n = int(n); table, bars = [], []
