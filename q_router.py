@@ -1007,7 +1007,7 @@ def run_demo(selected, n):
         table.append({"Problem": name, "Qubits": n,
                       "Structural twin from": f"{df.loc[j, 'field']} (n={df.loc[j, 'n']})",
                       "Predicted gate / anneal / classical": f"{preds['gate']:.2f} / {preds['anneal']:.2f} / {preds['classical']:.2f}",
-                      "Router's choice": mode, "Score of choice": round(scores[mode], 3),
+                      "Router's choice": mode, "Score of choice (simulator)": round(scores[mode], 3),
                       "Verified best decision": ", ".join(str(labels[i]) for i in np.flatnonzero(x_best))})
         bars.append((name.split(":")[0], scores, mode))
     fig, ax = plt.subplots(figsize=(9, 4)); w = 0.26
@@ -1018,7 +1018,7 @@ def run_demo(selected, n):
             if chosen == method: r.set_edgecolor("black"); r.set_linewidth(2.5)
     ax.set_xticks(np.arange(len(bars))); ax.set_xticklabels([b[0] for b in bars])
     ax.set_ylabel("score (1 = best, 0 = random)"); ax.axhline(0, c="gray", lw=.8)
-    ax.set_title("Each method's score (black outline = router's choice)"); ax.legend(); fig.tight_layout(); plt.close(fig)
+    ax.set_title("Each method's score on a perfect simulator (black outline = router's choice)", fontsize=10); ax.legend(); fig.tight_layout(); plt.close(fig)
     return pd.DataFrame(table), fig
 
 with gr.Blocks(title="Q-Router") as app:
@@ -1028,7 +1028,7 @@ with gr.Blocks(title="Q-Router") as app:
         size = gr.Slider(5, 9, value=6, step=1, label="Choices per problem (= qubits)")
     go = gr.Button("Fingerprint → Route → Solve", variant="primary")
     out_table = gr.Dataframe(label="Router decisions and results")
-    out_plot = gr.Plot(label="Scores by method")
+    out_plot = gr.Plot(label="Scores by method (perfect simulator; real-chip results are below)")
     gr.Markdown("### Recorded results from real IBM quantum hardware")
     gr.Dataframe(value=saved_hardware())
     go.click(run_demo, [pick, size], [out_table, out_plot])
