@@ -11,6 +11,7 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 | File | What it is |
 |---|---|
 | `Q_Router.ipynb` | The full pipeline. Open it in Google Colab and choose **Runtime → Run all** |
+| `Q_Router_Colab.ipynb` | **The Colab version:** same final code plus a run guide, all installs, and our real ibm_kingston results built in (no QPU time needed to see them) |
 | `q_router.py` | The same code as a plain Python script (`# %%` cell markers), easier to read and diff |
 | `requirements.txt` | Python packages |
 | `slides/Q-Router_presentation.pptx` | The 7-minute, 11-slide presentation, with detailed speaker notes |
