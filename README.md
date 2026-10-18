@@ -14,6 +14,7 @@ Built for the Florida Qiskit Fall Fest Hackathon 2026 (FAU).
 | `q_router.py` | The same code as a plain Python script (`# %%` cell markers), easier to read and diff |
 | `requirements.txt` | Python packages |
 | `slides/Q-Router_slides.pptx` | The 10-slide presentation, with speaker notes |
+| `slides/Q-Router_complete_guide.pptx` | A 58-slide guide explaining every step, decision, test and chart in plain language |
 | `results/` | Saved simulator results (CSVs, charts, full run log) |
 | `USE-CASE.md` | The problem, who it affects, and why it matters |
 | `LIMITATIONS.md` | What this project does not prove |
